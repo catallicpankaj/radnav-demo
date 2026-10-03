@@ -1,159 +1,64 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
-from fastapi.responses import HTMLResponse
+from dataclasses import dataclass, field
+from typing import Iterable, Sequence
 
-router = APIRouter()
+from .cad_guardrails_banner import (
+    render_cad_guardrails_banner,
+    render_cad_violation_message,
+)
 
 
-@router.get("/contract-dashboard", response_class=HTMLResponse)
-def contract_dashboard() -> str:
-    return """<!doctype html>
-<html lang=\"en\">
-  <head>
-    <meta charset=\"utf-8\" />
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
-    <title>AIWorkhive B-005 API v1 Contract</title>
-    <style>
-      :root {
-        color-scheme: light;
-        --bg: #ffffff;
-        --panel: #f6f8fb;
-        --text: #172033;
-        --muted: #5c667a;
-        --border: #d8e0ec;
-        --accent: #2457d6;
-        --good: #146c43;
-        --warn: #8a5a00;
-      }
-      body {
-        margin: 0;
-        font-family: Inter, Arial, Helvetica, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-      }
-      main {
-        max-width: 1080px;
-        margin: 0 auto;
-        padding: 32px 20px 48px;
-      }
-      header, section, article {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 16px;
-      }
-      h1, h2, h3 {
-        margin: 0 0 12px;
-        line-height: 1.2;
-      }
-      p, li {
-        color: var(--muted);
-        line-height: 1.55;
-      }
-      code, pre {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-size: 0.95rem;
-      }
-      pre {
-        overflow: auto;
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 16px;
-      }
-      .badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 999px;
-        background: #eaf1ff;
-        color: var(--accent);
-        font-size: 0.875rem;
-        font-weight: 600;
-        margin-bottom: 12px;
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 12px;
-      }
-      .card {
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 16px;
-      }
-      .ok { color: var(--good); font-weight: 600; }
-      .warn { color: var(--warn); font-weight: 600; }
-      a { color: var(--accent); }
-    </style>
-  </head>
-  <body>
-    <main>
-      <header>
-        <div class=\"badge\">B-005 API v1 contract</div>
-        <h1>AIWorkhive contract dashboard</h1>
-        <p>
-          This page summarizes the repo-committed v1 OpenAPI contract and the key UI-facing rules:
-          server-driven session navigation, filtered list endpoints, artifact fact metadata, and safe
-          connector ingest.
-        </p>
-      </header>
+@dataclass(frozen=True)
+class ContractDashboardState:
+    title: str = "Contract Dashboard"
+    subtitle: str = "Review API guardrails and ingestion constraints"
+    cad_violations: Sequence[str] = field(default_factory=tuple)
+    api_error_status: int | None = None
+    api_error_detail: str | None = None
 
-      <section aria-labelledby=\"endpoints-heading\">
-        <h2 id=\"endpoints-heading\">Required endpoints</h2>
-        <div class=\"grid\">
-          <article class=\"card\">
-            <h3>Sessions</h3>
-            <ul>
-              <li><code>GET /sessions</code> — filters and pagination</li>
-              <li><code>GET /sessions/{id}/next-block</code> — server-driven next question block</li>
-            </ul>
-          </article>
-          <article class=\"card\">
-            <h3>Artifacts</h3>
-            <ul>
-              <li><code>GET /artifacts</code> — filters and pagination</li>
-              <li><code>GET /artifacts/{name}</code> — includes fact status, confidence, and source</li>
-            </ul>
-          </article>
-          <article class=\"card\">
-            <h3>Connector ingest</h3>
-            <ul>
-              <li><code>POST /connector/ingest</code> only</li>
-              <li>Versioned payloads with per-site token signing</li>
-              <li>Schema rejects any message body fields</li>
-            </ul>
-          </article>
-        </div>
-      </section>
 
-      <section aria-labelledby=\"contract-heading\">
-        <h2 id=\"contract-heading\">Contract status</h2>
-        <ul>
-          <li class=\"ok\">OpenAPI document committed at <code>/docs/openapi.json</code></li>
-          <li class=\"ok\">Session question flow is server-driven by role</li>
-          <li class=\"ok\">List endpoints expose filters and pagination</li>
-          <li class=\"ok\">Connector ingest rejects message bodies</li>
-          <li class=\"warn\">Open questions remain for auth, recorded_at schema, and accessibility color specifics</li>
-        </ul>
-      </section>
+def render_contract_dashboard(state: ContractDashboardState | None = None) -> str:
+    state = state or ContractDashboardState()
 
-      <section aria-labelledby=\"openapi-heading\">
-        <h2 id=\"openapi-heading\">OpenAPI reference</h2>
-        <p>
-          Review the committed contract document here:
-          <a href=\"/docs/openapi.json\">/docs/openapi.json</a>
-        </p>
-        <pre aria-label=\"OpenAPI endpoint summary\">{
-  "GET /sessions": "filters + pagination",
-  "GET /sessions/{id}/next-block": "server-driven question block",
-  "GET /artifacts": "filters + pagination",
-  "GET /artifacts/{name}": "fact status, confidence, source",
-  "POST /connector/ingest": "versioned signed ingest; no message bodies"
-}</pre>
-      </section>
-    </main>
-  </body>
-</html>"""
+    banner = render_cad_guardrails_banner(state.cad_violations)
+    error_panel = ""
+    if state.api_error_status is not None and state.api_error_detail:
+        error_panel = render_cad_violation_message(
+            state.api_error_status,
+            state.api_error_detail,
+        )
+
+    return (
+        '<main class="contract-dashboard">'
+        f"<header><h1>{_escape_html(state.title)}</h1>"
+        f"<p>{_escape_html(state.subtitle)}</p></header>"
+        f"{banner}"
+        f"{error_panel}"
+        '<section class="contract-dashboard__rules">'
+        "<h2>Active guardrails</h2>"
+        "<ul>"
+        "<li>Append-only fact rows with supersedes chains</li>"
+        "<li>Evidence fields: evidence_text and evidence_ref</li>"
+        "<li>Unknown predicates are rejected unless present in the registry</li>"
+        "<li>Redaction runs before extraction and fails closed</li>"
+        "<li>Raw transcripts are never retained; store redacted-only transcripts</li>"
+        "<li>CAD facts and outputs are rejected with 422</li>"
+        "</ul>"
+        "</section>"
+        "</main>"
+    )
+
+
+def render_cad_violation_example(violations: Iterable[str]) -> str:
+    return render_cad_guardrails_banner(list(violations))
+
+
+def _escape_html(value: str) -> str:
+    return (
+        value.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&#39;")
+    )
