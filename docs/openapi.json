@@ -1,0 +1,55 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AIWorkhive API v1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/sessions/{id}/next-block": {
+      "get": {
+        "summary": "Get the next server-driven question block for a session"
+      }
+    },
+    "/artifacts": {
+      "get": {
+        "summary": "List artifacts with filters and pagination"
+      }
+    },
+    "/artifacts/{name}": {
+      "get": {
+        "summary": "Get artifact facts including status, confidence, and source"
+      }
+    },
+    "/sessions": {
+      "get": {
+        "summary": "List sessions with filters and pagination"
+      }
+    },
+    "/connector/ingest": {
+      "post": {
+        "summary": "Versioned, signed connector ingest"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ConnectorIngestV1": {
+        "type": "object",
+        "required": ["version", "site_token", "payload"],
+        "properties": {
+          "version": {
+            "type": "string",
+            "example": "v1"
+          },
+          "site_token": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
