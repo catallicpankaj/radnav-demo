@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: radnav-web
+Version: 0.1.0
+Summary: RadNav web application layer
+Requires-Python: >=3.12
+Requires-Dist: fastapi<1.0,>=0.110
+Requires-Dist: pydantic<3.0,>=2.6
+Requires-Dist: sqlalchemy<3.0,>=2.0
