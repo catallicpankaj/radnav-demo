@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: newrun-paypal-service
+  labels:
+    app: newrun-paypal
+spec:
+  type: ClusterIP
+  selector:
+    app: newrun-paypal
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

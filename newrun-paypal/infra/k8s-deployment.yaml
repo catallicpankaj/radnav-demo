@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: newrun-paypal-deployment
+  labels:
+    app: newrun-paypal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: newrun-paypal
+  template:
+    metadata:
+      labels:
+        app: newrun-paypal
+    spec:
+      containers:
+        - name: newrun-paypal
+          image: your-registry/newrun-paypal:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PAYPAL_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: paypal-credentials
+                  key: client-id
+            - name: PAYPAL_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: paypal-credentials
+                  key: client-secret
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
